@@ -18,7 +18,6 @@ def get_cognito_public_keys():
         return json.loads(response.read().decode())["keys"]
  
 PUBLIC_KEYS = get_cognito_public_keys()
- 
 def verify_token(token):
     try:
         # Extract JWT headers
@@ -41,7 +40,7 @@ def verify_token(token):
         pem_key = RSAAlgorithm.from_jwk(json.dumps(selected_key))
         print(f"Converted PEM Key:\n{pem_key}")
  
-        # Decode and verify the token
+        # Decode and verify the token with RS256 Algorithm
         decoded_token = jwt.decode(
             token,
             key=pem_key,
@@ -99,5 +98,4 @@ def handler(event, context):
             },
             "context": {"error": str(e)}
         }
- 
  
