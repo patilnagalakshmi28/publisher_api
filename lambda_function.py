@@ -2,6 +2,9 @@ import json
 import jwt
 import urllib.request
 from jwt.algorithms import RSAAlgorithm
+import uuid
+from datetime import datetime, timezone
+
  
 COGNITO_USER_POOL_ID = "us-east-1_I0pEodCZM"  
 AWS_REGION = "us-east-1"
@@ -85,7 +88,9 @@ def handler(event, context):
             "context": {"client_id": decoded_token.get("client_id", "unknown")}
         }
     except Exception as e:
-        # Deny access if an error occurs
+        correlation_id = str(uuid.uuid4())
+        timestamp = datetime.now(timezone.utc).isoformat()
+        error_message = str(e)
         return {
             "principalId": "user",
             "policyDocument": {
@@ -94,8 +99,15 @@ def handler(event, context):
                     "Action": "execute-api:Invoke",
                     "Effect": "Deny",
                     "Resource": event["methodArn"]
-                }]
-            },
-            "context": {"error": str(e)}
-        }
- 
+                    }]
+                },
+            "context": {
+                "error": json.dumps({
+                    "code": 400,
+                    "message": "BAD_REQUEST",
+                    "description": f"Invalid value '{event.get('authorizationToken', '')}' for header 'Authorization'",
+                    "correlationId": correlation_id,
+                    "dateTime": timestamp
+                    })
+                }
+            }
